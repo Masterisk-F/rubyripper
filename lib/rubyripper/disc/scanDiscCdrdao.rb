@@ -77,6 +77,8 @@ class ScanDiscCdrdao
     return @silence
   end
 
+  def catalog ; @catalog ; end
+
   # return the pregap if found, otherwise return 0
   def getPregapSectors(track)
     @preGap.key?(track) ? @preGap[track] : 0
@@ -166,6 +168,8 @@ private
         end
       elsif line[0..3] == 'ISRC'
         @trackIsrc[track] = line[4..-1].strip()[1..-2] #exclude quotes
+      elsif line =~ /CATALOG /
+        @catalog = $'.strip()[1..-2] #exclude quotes
       end
     end
     @tracks = track
