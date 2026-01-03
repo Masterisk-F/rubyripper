@@ -67,6 +67,7 @@ describe Cuesheet do
   let(:cue) {Cuesheet.new(disc, cdrdao, fileScheme, fileAndDir, prefs, deps)}
 
   it "should show all relevant disc data at the top" do
+    allow(cdrdao).to receive(:catalog).and_return('4562494353452')
     cue.test_printDiscData()
     expect(cue.cuesheet).to eq(['REM GENRE rock',
                                 'REM DATE 1983',
@@ -74,6 +75,7 @@ describe Cuesheet do
                                 'REM FREEDB_QUERY "This is a freedb string"',
                                 'REM MUSICBRAINZ_DISCID SEPOa6RCm56Luhh2o_2KFO0Mq4A-',
                                 'REM COMMENT "Rubyripper test"',
+                                'CATALOG 4562494353452',
                                 'PERFORMER "Iron Maiden"',
                                 'TITLE "Number of the Beast"'])
   end

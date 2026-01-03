@@ -73,6 +73,7 @@ private
     @cuesheet << "REM FREEDB_QUERY \"#{@disc.freedbString}\""
     @cuesheet << "REM MUSICBRAINZ_DISCID #{@disc.musicbrainzDiscid}"
     @cuesheet << "REM COMMENT \"Rubyripper #{$rr_version}\""
+    @cuesheet << "CATALOG #{@cdrdao.catalog}" unless @cdrdao.catalog.nil?
     @cuesheet << "PERFORMER \"#{@md.artist}\""
     @cuesheet << "TITLE \"#{@md.album}\""
   end
