@@ -80,6 +80,7 @@ class SecureRip
 
   # Due to a bug in cdparanoia the -Z setting has to be replaced for last track.
   # This is only needed when an offset is set. See issue nr. 13.
+  # TODO: Check if this workaround is still needed for libcdio-paranoia. Kept for safety.
   def checkParanoiaSettings(track=nil)
     if @prefs.rippersettings.include?('-Z') && @prefs.offset != 0
       if @prefs.image || track == @disc.audiotracks
@@ -197,7 +198,7 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
 
   def fileCreated(track=nil) #check if cdparanoia outputs wav files (passing bad parameters?)
     if not File.exist?(@fileScheme.getTempFile(track, @trial))
-      @log.update("error", _("Cdparanoia doesn't output WAVE files.\nCheck your settings please."))
+      @log.update("error", _("Libcdio-paranoia (cd-paranoia) doesn't output WAVE files.\nCheck your settings please."))
       return false
     end
     return true
@@ -375,7 +376,7 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
 
     @log.newTrack(track) if @trial == 1
 
-    command = "cdparanoia"
+    command = @deps.cdparanoia_executable
 
     if @prefs.rippersettings.size != 0
       command += " #{@prefs.rippersettings}"

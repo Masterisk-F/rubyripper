@@ -102,7 +102,7 @@ private
   # fill the Hash with consequences
   def setConsequence
     @consequence = {
-    'cdparanoia' => _("Rubyripper can't be used without cdparanoia!"),
+    'cd-paranoia' => _("Rubyripper can't be used without libcdio-paranoia (cd-paranoia)!"),
       'ruby-gtk3' => _("You won't be able to use the gtk3 interface."),
       'ruby-gettext' => _("You won't be able to use translations."),
       'discid' => _("You won't have accurate Gnudb string \
@@ -133,7 +133,7 @@ calculation unless %s is installed.") % ['Discid'],
   # check if all the forced dependencies are there
   def checkForcedDeps()
     @forcedDeps = Array.new
-    @forcedDeps << ['cdparanoia', installed?('cdparanoia')]
+    @forcedDeps << ['cd-paranoia', installed?('cd-paranoia')]
   end
 
   # check if all the optional dependencies are there
@@ -206,11 +206,15 @@ calculation unless %s is installed.") % ['Discid'],
 
   # when running rubyripper make sure the forced deps are there
   def forceDepsRuntime
-    if not @deps['cdparanoia']
-      puts "Cdparanoia not found on your system."
+    if not @deps['cd-paranoia']
+      puts "Libcdio-paranoia (cd-paranoia) not found on your system."
       puts "This is required to run rubyripper. Exiting..."
       exit()
     end
+  end
+
+  def cdparanoia_executable
+    return 'cd-paranoia'
   end
 
   # determine default file manager

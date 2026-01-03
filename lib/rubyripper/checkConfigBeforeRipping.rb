@@ -79,7 +79,7 @@ private
   end
 
   def checkBinaries
-    isFound?('cdparanoia')
+    isFound?('cd-paranoia')
     isFound?('flac') if @prefs.flac
     isFound?('oggenc') if @prefs.vorbis
     isFound?('lame') if @prefs.mp3
