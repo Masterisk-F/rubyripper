@@ -59,7 +59,7 @@ private
     @logString << _("Used drive") + '     : ' + @disc.devicename + '   '
     @logString << _("Device") + ': ' + @prefs.cdrom + "\n\n"
     
-    @logString << _("Used ripper") + '    : ' + version('cdparanoia') + "\n"
+    @logString << _("Used ripper") + '    : ' + version('cd-paranoia') + "\n"
     @logString << _("Selected options") + ' : ' + @prefs.rippersettings + "\n\n"
     
     @logString << _("Matches required for all chunks") + '       : ' + "#{@prefs.reqMatchesAll}\n"

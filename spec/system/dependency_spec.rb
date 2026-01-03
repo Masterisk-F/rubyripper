@@ -83,4 +83,31 @@ describe Dependency do
       expect(deps.cdrom()).to eq('/dev/sr9')
     end
   end
+  context "When checking for forced dependencies" do
+    let(:deps) {Dependency.new(file, platform='linux')}
+
+    it "should return true when cd-paranoia is found" do
+      expect(deps).to receive(:installed?).with('cd-paranoia').and_return(true)
+      deps.send(:checkForcedDeps)
+      deps.instance_variable_set(:@deps, Hash[deps.instance_variable_get(:@forcedDeps)])
+      expect(deps.send(:forceDepsRuntime)).to eq(nil) # Should not raise or exit
+    end
+
+    it "should abort when cd-paranoia is not installed" do
+      expect(deps).to receive(:installed?).with('cd-paranoia').and_return(false)
+      deps.send(:checkForcedDeps)
+      deps.instance_variable_set(:@deps, Hash[deps.instance_variable_get(:@forcedDeps)])
+      expect{deps.send(:forceDepsRuntime)}.to raise_error(SystemExit)
+    end
+    
+    it "should abort when only legacy cdparanoia is installed (strict migration)" do
+      # Mocking cd-paranoia missing
+      expect(deps).to receive(:installed?).with('cd-paranoia').and_return(false)
+      # We don't check for legacy anymore, so this test just confirms failures when cd-paranoia is missing
+      
+      deps.send(:checkForcedDeps)
+      deps.instance_variable_set(:@deps, Hash[deps.instance_variable_get(:@forcedDeps)])
+      expect{deps.send(:forceDepsRuntime)}.to raise_error(SystemExit)
+    end
+  end
 end

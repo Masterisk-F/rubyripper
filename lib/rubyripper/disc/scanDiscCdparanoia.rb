@@ -143,11 +143,11 @@ class ScanDiscCdparanoia
       @query = File.read(File.join(@prefs.testdisc, 'cdparanoia')).split("\n")
     else
       @multipleDriveSupport = true
-      @query = @exec.launch("cdparanoia -d #{@prefs.cdrom} -vQ")
+      @query = @exec.launch("cd-paranoia -d #{@prefs.cdrom} -vQ")
       # some versions of cdparanoia don't support the cdrom parameter
       
       if @query != nil && @query.include?('USAGE')
-        @query = @exec.launch("cdparanoia -vQ")
+        @query = @exec.launch("cd-paranoia -vQ")
         @multipleDriveSupport = false
       end
     end
@@ -164,14 +164,14 @@ class ScanDiscCdparanoia
   # check the query result for errors
   def isValidQuery()
     if @query.nil?
-      updateStatus([:notInstalled, 'cdparanoia'])
+      updateStatus([:notInstalled, 'cd-paranoia'])
       return false
     end
     
     @query.each do |line|
       case line
         when /Unable to open disc/ then updateStatus([:noDiscInDrive, @prefs.cdrom]) ; break
-        when /USAGE/ then updateStatus([:wrongParameters, 'cdparanoia']) ; break
+        when /USAGE/ then updateStatus([:wrongParameters, 'cd-paranoia']) ; break
         when /No such file or directory/ then updateStatus([:unknownDrive, @prefs.cdrom]) ; break
       end
     end
@@ -201,12 +201,12 @@ class ScanDiscCdparanoia
     setupDisc()
     currentTrack = 0
     @query.each do |line|
-      if line[0,5] =~ /\s+\d+\./
+      if line =~ /^\s*\d+\./
         currentTrack += 1
         addTrack(line, currentTrack)
       elsif line =~ /CDROM\D*:/
         @devicename = $'.strip()
-      elsif line[0,5] == "TOTAL"
+      elsif line =~ /^TOTAL/
         @playtime = line.split()[2][1,5]
       end
     end
