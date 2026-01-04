@@ -52,7 +52,7 @@ class SecureRip
     @crcs = []
     @correctedcrc = nil
     @digest = nil
-    @rippersettingsBak = nil
+
   end
 
   def startTheRip()
@@ -63,40 +63,18 @@ class SecureRip
   
   def ripImage
     puts "DEBUG: Ripping image" if @prefs.debug
-    checkParanoiaSettings()
     ripTrack()
-    restoreParanoiaSettings()
   end
     
   def ripTracks
     @trackSelection.each do |track|
       break if @cancelled == true
       puts "DEBUG: Ripping track #{track}" if @prefs.debug
-      checkParanoiaSettings(track)
       ripTrack(track)
-      restoreParanoiaSettings()
     end
   end
 
-  # Due to a bug in cdparanoia the -Z setting has to be replaced for last track.
-  # This is only needed when an offset is set. See issue nr. 13.
-  # TODO: Check if this workaround is still needed for libcdio-paranoia. Kept for safety.
-  def checkParanoiaSettings(track=nil)
-    if @prefs.rippersettings.include?('-Z') && @prefs.offset != 0
-      if @prefs.image || track == @disc.audiotracks
-        @rippersettingsBak = @prefs.rippersettings.dup()
-        @prefs.rippersettings.gsub!(/-Z\s?/, '')
-      end
-    end
-  end
 
-  # restore cdparanoia settings potentialy fixed up in checkParanoiaSettings
-  def restoreParanoiaSettings
-    if @rippersettingsBak != nil
-      @prefs.rippersettings = @rippersettingsBak
-      @rippersettingsBak = nil
-    end
-  end
 
   # rip one output file
   def ripTrack(track=nil)
