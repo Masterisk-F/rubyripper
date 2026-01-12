@@ -20,6 +20,7 @@ require 'uri'
 require 'tempfile'
 require 'rubyripper/modules/audioCalculations'
 require 'rubyripper/preferences/main'
+require 'parallel'
 
 # Class to hold the verification results of AccurateRip
 class AccurateRipResult
@@ -28,8 +29,9 @@ class AccurateRipResult
   attr_reader :status,           # true if all tracks matched
               :computed_v1,      # {track_number => crc}
               :computed_v2,      # {track_number => crc}
-              :pressings,        # Array of multiple pressing data
               :track_results     # {track_number => {matched: bool, version: :v1/:v2, pressing_index: int, confidence: int}}
+
+  attr_accessor :pressings       # Array of multiple pressing data
 
   def initialize
     @status = false
@@ -63,6 +65,14 @@ class AccurateRipResult
   # Check if all tracks matched
   def finalize
     @status = @track_results.values.all? { |r| r[:matched] }
+  end
+
+  # Merge results from another AccurateRipResult instance
+  def merge(other)
+    @computed_v1.merge!(other.computed_v1)
+    @computed_v2.merge!(other.computed_v2)
+    @track_results.merge!(other.track_results)
+    # pressings are assumed to be identical/readonly, so no need to merge
   end
 
   # Generate string for logging (table format)
@@ -136,10 +146,21 @@ class AccurateRip
     result = AccurateRipResult.new
     prepareVerification(result)
 
-    files.each do |track, file_path|
+    # Process tracks in parallel (using processes)
+    local_results = Parallel.map(files, in_processes: Parallel.processor_count) do |track, file_path|
+      local_result = AccurateRipResult.new
+      local_result.pressings = result.pressings # Inject master pressings
+      
       audio_data = readAudioData(file_path)
-      next unless audio_data
-      verifyTrackData(track, audio_data, result)
+      if audio_data
+        verifyTrackData(track, audio_data, local_result)
+      end
+      local_result # Return local result to master process
+    end
+
+    # Merge all local results
+    local_results.each do |local_result|
+      result.merge(local_result)
     end
 
     result.finalize
@@ -156,10 +177,22 @@ class AccurateRip
     return result unless audio_data
 
     track_count = @disc.audiotracks
-    (1..track_count).each do |track|
+    
+    # Process tracks in parallel
+    # audio_data (large string) is shared via COW (Copy-On-Write) in forked processes
+    local_results = Parallel.map(1..track_count, in_processes: Parallel.processor_count) do |track|
+      local_result = AccurateRipResult.new
+      local_result.pressings = result.pressings
+      
       track_audio_data = extractTrackFromImage(audio_data, track)
-      next unless track_audio_data
-      verifyTrackData(track, track_audio_data, result)
+      if track_audio_data
+        verifyTrackData(track, track_audio_data, local_result)
+      end
+      local_result
+    end
+
+    local_results.each do |local_result|
+      result.merge(local_result)
     end
 
     result.finalize
@@ -352,8 +385,7 @@ class AccurateRip
 
   # Calculate AccurateRip V1 CRC
   def computeV1Checksum(track, audio_data)
-    data_size = audio_data.size
-    dword_count = data_size / 4
+    dword_count = audio_data.size / 4
 
     # Calculate skip range
     skip_from = 0
@@ -369,17 +401,13 @@ class AccurateRip
       skip_to -= (SECTOR_BYTES * SKIP_SECTORS) / 4
     end
 
-    crc = 0
-    pos = 1
+    samples = audio_data.unpack('V*')
 
-    dword_count.times do |i|
-      if pos >= skip_from && pos <= skip_to
-        # Load 4 bytes as little endian
-        sample = audio_data[i * 4, 4].unpack1('V')
-        crc += pos * sample
-        crc &= 0xFFFFFFFF  # Limit to 32bit
-      end
-      pos += 1
+    crc = 0
+    (skip_from...skip_to).each do |i|
+      pos = i + 1
+      crc += pos * samples[i]
+      crc &= 0xFFFFFFFF
     end
 
     crc
@@ -387,8 +415,7 @@ class AccurateRip
 
   # Calculate AccurateRip V2 CRC
   def computeV2Checksum(track, audio_data)
-    data_size = audio_data.size
-    dword_count = data_size / 4
+    dword_count = audio_data.size / 4
 
     # Calculate skip range
     skip_from = 0
@@ -404,22 +431,20 @@ class AccurateRip
       skip_to -= (SECTOR_BYTES * SKIP_SECTORS) / 4
     end
 
+    samples = audio_data.unpack('V*')
+
     crc = 0
-    pos = 1
+    (skip_from...skip_to).each do |i|
+      pos = i + 1
+      sample = samples[i]
 
-    dword_count.times do |i|
-      if pos >= skip_from && pos <= skip_to
-        sample = audio_data[i * 4, 4].unpack1('V')
+      # V2: multiply 64bit and add HI/LO
+      calc = pos * sample
+      lo = calc & 0xFFFFFFFF
+      hi = (calc >> 32) & 0xFFFFFFFF
 
-        # V2: multiply 64bit and add HI/LO
-        calc = pos * sample
-        lo = calc & 0xFFFFFFFF
-        hi = (calc >> 32) & 0xFFFFFFFF
-
-        crc += hi + lo
-        crc &= 0xFFFFFFFF
-      end
-      pos += 1
+      crc += hi + lo
+      crc &= 0xFFFFFFFF
     end
 
     crc
