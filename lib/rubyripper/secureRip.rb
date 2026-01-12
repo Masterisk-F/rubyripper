@@ -22,6 +22,7 @@ require 'rubyripper/system/dependency'
 require 'rubyripper/system/execute'
 require 'rubyripper/preferences/main'
 require 'rubyripper/modules/audioCalculations'
+require 'rubyripper/accurateRip'
 
 # The SecureRip class is mainly responsible for:
 # * Managing cdparanoia to fetch the files
@@ -53,6 +54,7 @@ class SecureRip
     @correctedcrc = nil
     @digest = nil
     @rippersettingsBak = nil
+    @rippedFiles = {}  # {track => file_path} for AccurateRip verification
   end
 
   def startTheRip()
@@ -66,6 +68,10 @@ class SecureRip
     checkParanoiaSettings()
     ripTrack()
     restoreParanoiaSettings()
+    
+    performAccurateRipVerification() unless @cancelled || @rippedFiles.empty?
+    
+    startEncodingForTracks()
   end
     
   def ripTracks
@@ -75,6 +81,18 @@ class SecureRip
       checkParanoiaSettings(track)
       ripTrack(track)
       restoreParanoiaSettings()
+    end
+    
+    performAccurateRipVerification() unless @cancelled || @rippedFiles.empty?
+    
+    startEncodingForTracks()
+  end
+  
+  def startEncodingForTracks
+    return if @cancelled
+    @rippedFiles.keys.sort.each do |track|
+      track_param = @prefs.image ? nil : track
+      @encoding.addTrack(track_param)
     end
   end
 
@@ -108,7 +126,8 @@ class SecureRip
     if sizeTest(track)
       if main(track)
         deEmphasize(track) unless @prefs.image
-        @encoding.addTrack(track)
+        # Record file path for AccurateRip verification and encoding
+        @rippedFiles[track] = @fileScheme.getTempFile(track, 1)
       else
         return false
       end #ready to encode
@@ -436,5 +455,28 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
     end
 
     return @crc32
+  end
+
+  # Execute AccurateRip verification
+  def performAccurateRipVerification
+    puts "DEBUG: Starting AccurateRip verification" if @prefs.debug
+
+    begin
+      accuraterip = AccurateRip.new(@disc, @prefs)
+
+      # Change method to call depending on image mode or track mode
+      if @prefs.image
+        file_path = @rippedFiles.values.first
+        result = accuraterip.verifyImage(file_path)
+      else
+        result = accuraterip.verifyTracks(@rippedFiles)
+      end
+
+      # Output results to log (also displays on stdout via @log.add)
+      @log.accurateRipResult(result)
+    rescue StandardError => e
+      puts "An error occurred during AccurateRip verification: #{e.message}" if @prefs.debug
+      @log << "An error occurred during AccurateRip verification: #{e.message}\n"
+    end
   end
 end
