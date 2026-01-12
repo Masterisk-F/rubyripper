@@ -145,8 +145,10 @@ private
     @out.puts ' 6) ' + _("Match erroneous chunks") + ": %s" % [@prefs.reqMatchesErrors]
     @out.puts ' 7) ' + _("Maximum trials") + ": %s" % [@prefs.maxTries == 0 ? "no\
  maximum" : @prefs.maxTries]
-    @out.puts ' 8) ' + _("Eject disc after ripping %s") % [showBool(@prefs.eject)]
-    @out.puts ' 9) ' + _("Only keep log when errors %s") % [showBool(@prefs.noLog)]
+    @out.puts ' 8) ' + _("AccurateRip verification %s") % [showBool(@prefs.accRip)]
+    @out.puts ' 9) ' + _("AccurateRip every trial (Finish early if verified successfully) %s") % [showBool(@prefs.accRipEveryTime)]
+    @out.puts '10) ' + _("Eject disc after ripping %s") % [showBool(@prefs.eject)]
+    @out.puts '11) ' + _("Only keep log when errors %s") % [showBool(@prefs.noLog)]
     @out.puts '99) ' + _("Back to settings main menu")
     @out.puts ""
     @int.get("Please type the number of the setting you wish to change", 99)
@@ -165,8 +167,10 @@ private
       when 5 then @prefs.reqMatchesAll = @int.get(_("Match all chunks"), 2)
       when 6 then @prefs.reqMatchesErrors = @int.get(_("Match erronous chunks"), 3)
       when 7 then @prefs.maxTries = @int.get(_("Maximum trials"), 5)
-      when 8 then switchBool('eject')
-      when 9 then switchBool('noLog')
+      when 8 then switchBool('accRip')
+      when 9 then switchBool('accRipEveryTime')
+      when 10 then switchBool('eject')
+      when 11 then switchBool('noLog')
     else noValidChoiceMessage(choice)
     end
     loopSubMenuRipping() unless choice == 99
