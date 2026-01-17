@@ -217,10 +217,6 @@ calculation unless %s is installed.") % ['Discid'],
     end
   end
 
-  def cdparanoia_executable
-    return 'cd-paranoia'
-  end
-
   # determine default file manager
   def getFilemanager
     case
