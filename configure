@@ -35,10 +35,11 @@ end
 
 $PREFIX='/usr/local'
 $BINDIR='/bin'
-$LOCALE='/share/locale'
-$ICONDIR='/share/icons/hicolor/128x128/apps'
+$ISOLATED_ROOT = '/lib/rubyripperremix'
+$LOCALE= $ISOLATED_ROOT + '/share/locale'
+$ICONDIR= $ISOLATED_ROOT + '/share/icons/hicolor/128x128/apps'
 $DESKTOP='/share/applications'
-$RUBYDIR= '/lib/rubyripper'
+$RUBYDIR= $ISOLATED_ROOT + '/lib/rubyripper'
 
 if RUBY_PLATFORM.include?('darwin')
   $INSTALL = 'install'
@@ -164,13 +165,13 @@ makefile.puts "DESKTOP=#{$PREFIX}#{$DESKTOP}"
 makefile.puts "RUBYDIR=#{$PREFIX}#{$RUBYDIR}"
 makefile.puts ""
 makefile.puts "install:"
-Dir.glob("#{$RUBYDIR[1..-1]}/**/*.rb").each do |file|
-  makefile.puts "\t#{$INSTALL} -m 644 #{file} $(prefix)$(DESTDIR)#{$PREFIX}/#{file}"
+Dir.glob("lib/rubyripper/**/*.rb").each do |file|
+  makefile.puts "\t#{$INSTALL} -m 644 #{file} $(prefix)$(DESTDIR)#{$PREFIX}#{$ISOLATED_ROOT}/#{file}"
 end
 
 if $GTK3
   makefile.puts "\t#{$INSTALL} -m 755 bin/rubyripper_gtk3 $(prefix)$(DESTDIR)$(BINDIR)/rrr_gui"
-  makefile.puts "\t#{$INSTALL} -m 644 #{$ICONDIR[1..-1]}/rubyripper.png $(prefix)$(DESTDIR)$(ICONDIR)/rubyripper.png"
+  makefile.puts "\t#{$INSTALL} -m 644 #{$ICONDIR[1..-1]}/rubyripper.png $(prefix)$(DESTDIR)#{$PREFIX}#{$ICONDIR}/rubyripper.png"
   makefile.puts "\t#{$INSTALL} -m 644 #{$DESKTOP[1..-1]}/RubyRipperRemix.desktop $(prefix)$(DESTDIR)$(DESKTOP)/RubyRipperRemix.desktop"
 end
 
@@ -179,17 +180,17 @@ if $CLI
 end
 
 $LANG.each do |lang|
-  makefile.puts "\t#{$INSTALL} -m 644 locale/#{lang}/LC_MESSAGES/rubyripper.mo $(prefix)$(DESTDIR)$(LOCALE)/#{lang}/LC_MESSAGES/rubyripper.mo"
+  makefile.puts "\t#{$INSTALL} -m 644 locale/#{lang}/LC_MESSAGES/rubyripper.mo $(prefix)$(DESTDIR)#{$PREFIX}#{$LOCALE}/#{lang}/LC_MESSAGES/rubyripper.mo"
 end
 
 makefile.puts ""
 makefile.puts "uninstall:"
-makefile.puts "\trm -rf $(prefix)$(DESTDIR)$(RUBYDIR)"
+makefile.puts "\trm -rf $(prefix)$(DESTDIR)#{$PREFIX}#{$ISOLATED_ROOT}"
 
 if $GTK3
   makefile.puts "\trm -f $(prefix)$(DESTDIR)$(BINDIR)/rrr_gui"
-  makefile.puts "\trm -f $(prefix)$(DESTDIR)$(ICONDIR)/rubyripper.png"
   makefile.puts "\trm -f $(prefix)$(DESTDIR)$(DESKTOP)/RubyRipperRemix.desktop"
+  makefile.puts "\trm -f $(prefix)$(DESTDIR)$(ICONDIR)/rubyripper.png"
   makefile.puts "\tgtk-update-icon-cache -t $(prefix)$(DESTDIR)$(ICONDIR)"
 end
 
@@ -200,6 +201,7 @@ end
 $LANG.each do |lang|
   makefile.puts "\trm -f $(prefix)$(DESTDIR)$(LOCALE)/#{lang}/LC_MESSAGES/rubyripper.mo"
 end
+
 makefile.puts ""
 makefile.puts "clean:"
 makefile.puts "\trm -rf locale/"

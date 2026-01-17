@@ -17,6 +17,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Put the local lib directory on top of the ruby default lib search path
+$:.insert(0, File.expand_path('../../lib/rubyripperremix/lib', __FILE__))
 $:.insert(0, File.expand_path('../../lib', __FILE__))
 
 # Try to find the rubyripper lib files
@@ -92,7 +93,7 @@ attr_reader :instances
   
   # find the icon
   def setIconForWindow
-    iconPaths = [File.expand_path('../../share/icons/hicolor/128x128/apps', __FILE__), "/usr/local/share/icons/hicolor/128x128/apps"]
+    iconPaths = [File.expand_path('../../share/icons/hicolor/128x128/apps', __FILE__), "/usr/local/lib/rubyripperremix/share/icons/hicolor/128x128/apps", "/usr/local/share/icons/hicolor/128x128/apps"]
     iconPaths.each do |path|
       if File.exist?(file = File.join(path, 'rubyripper.png'))
         @gtkWindow.icon = GdkPixbuf::Pixbuf.new(:file => file)
