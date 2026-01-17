@@ -97,6 +97,10 @@ class Dependency
     return false
   end
 
+  def cdparanoia_executable
+    return 'cd-paranoia'
+  end
+
 private
 
   # fill the Hash with consequences
