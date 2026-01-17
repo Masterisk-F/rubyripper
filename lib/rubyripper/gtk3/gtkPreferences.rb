@@ -99,6 +99,8 @@ class GtkPreferences
     @allChunksSpin.value = @prefs.reqMatchesAll.to_f
     @errChunksSpin.value = @prefs.reqMatchesErrors.to_f
     @maxSpin.value = @prefs.maxTries.to_f
+    @accRip.active = @prefs.accRip
+    @accRipEveryTime.active = @prefs.accRipEveryTime
     @ripEntry.text = @prefs.rippersettings
     @eject.active = @prefs.eject
     @noLog.active = @prefs.noLog
@@ -166,6 +168,8 @@ class GtkPreferences
     @prefs.reqMatchesAll = @allChunksSpin.value.to_i
     @prefs.reqMatchesErrors = @errChunksSpin.value.to_i
     @prefs.maxTries = @maxSpin.value.to_i
+    @prefs.accRip = @accRip.active?
+    @prefs.accRipEveryTime = @accRipEveryTime.active?
     @prefs.rippersettings = @ripEntry.text
     @prefs.eject = @eject.active?
     @prefs.noLog = @noLog.active?
@@ -288,11 +292,13 @@ It is recommended to enable this option.")
 
   # 2nd frame on secure ripping tab
   def buildFrameRippingOptions
-    @table50 = newTable(rows=3, columns=3)
+    @table50 = newTable(rows=5, columns=3)
 #create objects
     @all_chunks = Gtk::Label.new(_("Match all chunks:")) ; @all_chunks.set_alignment(0.0, 0.5)
     @err_chunks = Gtk::Label.new(_("Match erroneous chunks:")) ; @err_chunks.set_alignment(0.0, 0.5)
     @max_label = Gtk::Label.new(_("Maximum trials (0 = unlimited):")) ; @max_label.set_alignment(0.0, 0.5)
+    @accRip = Gtk::CheckButton.new(_("AccurateRip verification"))
+    @accRipEveryTime = Gtk::CheckButton.new(_("AccurateRip every trial (finish early on match)"))
     @allChunksSpin = Gtk::SpinButton.new(2.0,  100.0, 1.0)
     @errChunksSpin = Gtk::SpinButton.new(2.0, 100.0, 1.0)
     @maxSpin = Gtk::SpinButton.new(0.0, 100.0, 1.0)
@@ -303,6 +309,9 @@ It is recommended to enable this option.")
     @table50.attach(@all_chunks, 0, 1, 0, 1, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0) #1st column
     @table50.attach(@err_chunks, 0, 1, 1, 2, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
     @table50.attach(@max_label, 0, 1, 2, 3, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
+    @table50.attach(@accRip, 0, 3, 3, 4, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
+    @table50.attach(@accRipEveryTime, 0, 3, 4, 5, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
+    
     @table50.attach(@allChunksSpin, 1, 2, 0, 1, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0) #2nd column
     @table50.attach(@errChunksSpin, 1, 2, 1, 2, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
     @table50.attach(@maxSpin, 1, 2, 2, 3, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
@@ -311,6 +320,7 @@ It is recommended to enable this option.")
     @table50.attach(@time3, 2, 3, 2, 3, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
 #connect a signal to @all_chunks to make sure @err_chunks get always at least the same amount of rips as @all_chunks
     @allChunksSpin.signal_connect("value_changed") {if @errChunksSpin.value < @allChunksSpin.value ; @errChunksSpin.value = @allChunksSpin.value end ; @errChunksSpin.set_range(@allChunksSpin.value,100.0)} #ensure all_chunks cannot be smaller that err_chunks.
+    @accRip.signal_connect("clicked") {@accRipEveryTime.sensitive = @accRip.active?}
     @frame50= newFrame(_('Ripping options'), child=@table50)
   end
 
