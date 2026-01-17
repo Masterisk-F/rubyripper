@@ -404,10 +404,12 @@ class AccurateRip
     samples = audio_data.unpack('V*')
 
     crc = 0
-    (skip_from...skip_to).each do |i|
+    i = skip_from
+    while i < skip_to
       pos = i + 1
       crc += pos * samples[i]
       crc &= 0xFFFFFFFF
+      i += 1
     end
 
     crc
@@ -434,7 +436,8 @@ class AccurateRip
     samples = audio_data.unpack('V*')
 
     crc = 0
-    (skip_from...skip_to).each do |i|
+    i = skip_from
+    while i < skip_to
       pos = i + 1
       sample = samples[i]
 
@@ -445,6 +448,7 @@ class AccurateRip
 
       crc += hi + lo
       crc &= 0xFFFFFFFF
+      i += 1
     end
 
     crc
