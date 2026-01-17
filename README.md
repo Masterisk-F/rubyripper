@@ -14,6 +14,8 @@ This project is a fork of [Rubyripper](https://github.com/bleskodev/rubyripper).
     *   Fixed various issues with artist name handling (compilations, single album artist).
     *   Other minor fixes and improvements.
 
+The executables after installation will be named `rrr` and `rrr_gui`.
+
 ---
 
 *The content below is from the original Rubyripper documentation.*
