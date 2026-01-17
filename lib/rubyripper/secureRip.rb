@@ -22,6 +22,7 @@ require 'rubyripper/system/dependency'
 require 'rubyripper/system/execute'
 require 'rubyripper/preferences/main'
 require 'rubyripper/modules/audioCalculations'
+require 'rubyripper/accurateRip'
 
 # The SecureRip class is mainly responsible for:
 # * Managing cdparanoia to fetch the files
@@ -53,6 +54,7 @@ class SecureRip
     @correctedcrc = nil
     @digest = nil
     @rippersettingsBak = nil
+    @rippedFiles = {}  # {track => file_path} for AccurateRip verification
   end
 
   def startTheRip()
@@ -66,6 +68,15 @@ class SecureRip
     checkParanoiaSettings()
     ripTrack()
     restoreParanoiaSettings()
+    
+    
+    # performAccurateRipVerification() unless @cancelled || @rippedFiles.empty?
+    # Only perform AccurateRip verification once at the end when accRipEveryTime=false
+    if @prefs.accRip && !@prefs.accRipEveryTime && !@cancelled && !@rippedFiles.empty?
+      performAccurateRipVerification()
+    end
+    
+    startEncodingForTracks()
   end
     
   def ripTracks
@@ -75,6 +86,22 @@ class SecureRip
       checkParanoiaSettings(track)
       ripTrack(track)
       restoreParanoiaSettings()
+    end
+    
+    # performAccurateRipVerification() unless @cancelled || @rippedFiles.empty?
+    # Only perform AccurateRip verification once at the end when accRipEveryTime=false
+    if @prefs.accRip && !@prefs.accRipEveryTime && !@cancelled && !@rippedFiles.empty?
+      performAccurateRipVerification()
+    end
+    
+    startEncodingForTracks()
+  end
+  
+  def startEncodingForTracks
+    return if @cancelled
+    @rippedFiles.keys.sort.each do |track|
+      track_param = @prefs.image ? nil : track
+      @encoding.addTrack(track_param)
     end
   end
 
@@ -108,7 +135,8 @@ class SecureRip
     if sizeTest(track)
       if main(track)
         deEmphasize(track) unless @prefs.image
-        @encoding.addTrack(track)
+        # Record file path for AccurateRip verification and encoding
+        @rippedFiles[track] = @fileScheme.getTempFile(track, 1)
       else
         return false
       end #ready to encode
@@ -147,7 +175,25 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
   end
 
   def main(track=nil)
-    @reqMatchesAll.times{if not doNewTrial(track) ; return false end} # The amount of matches all sectors should match
+    @reqMatchesAll.times do
+      if not doNewTrial(track) ; return false end
+      
+      # If accRipEveryTime is true, perform AccurateRip verification after each trial
+      if @prefs.accRip && @prefs.accRipEveryTime
+        ar_result = performAccurateRipVerification(track, @trial)
+        if ar_result && ar_result.status
+          # Success: keep this trial's file and finish early
+          cleanupOtherTrialFiles(track, @trial)
+          @crcs = [getCRC(track, 1)] # Recalculate CRC (for renamed file)
+          @log.finishTrack(@peakLevel, @crcs, _("Copy OK"), nil)
+          @log.copyMD5(@digest)
+          @log.updateRippingProgress(track)
+          return true
+        end
+      end
+    end 
+    # The amount of matches all sectors should match
+
     analyzeFiles(track) #If there are differences, save them in the @errors hash
     status = _("Copy OK")
 
@@ -172,6 +218,15 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
       # for example is trial = 3 and only 2 matches are required a match can happen
       correctErrorPos(track) if @trial > @reqMatchesErrors
       @correctedcrc = getCRC(track, 1)
+
+      # If accRipEveryTime is true, perform AccurateRip verification after error correction
+      if @prefs.accRip && @prefs.accRipEveryTime
+        ar_result = performAccurateRipVerification(track, 1)
+        if ar_result && ar_result.status
+          @errors.clear
+          break
+        end
+      end
     end
 
     @log.finishTrack(@peakLevel, @crcs, status, @correctedcrc)
@@ -436,5 +491,77 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
     end
 
     return @crc32
+  end
+
+  # Execute AccurateRip verification
+  #
+  # This method handles two main scenarios based on the arguments:
+  # 1. Verify all tracks
+  #    - Arguments: track=nil, trial=1 (default)
+  #    - Target: Uses @rippedFiles hash which contains all successfully ripped tracks.
+  #
+  # 2. Verify a single track (Early finish check)
+  #    - Arguments: track=Integer, trial=Integer
+  #    - Target: Uses specific temporary file for the given track and trial.
+  #
+  # In both scenarios, the behavior differs based on @prefs.image:
+  # - Image Mode (@prefs.image=true): Verifies a single image file using verifyImage(path).
+  # - Track Mode (@prefs.image=false): Verifies one or more tracks using verifyTracks(hash).
+  #
+  def performAccurateRipVerification(track=nil, trial=1)
+    puts "DEBUG: Starting AccurateRip verification" if @prefs.debug
+
+    begin
+      accuraterip = AccurateRip.new(@disc, @prefs)
+      result = nil
+
+      if @prefs.image
+        # --- Image Mode ---
+        # Image mode always verifies a single file.
+        # getTempFile ignores track argument in image mode, so we always use it.
+        file_path = @fileScheme.getTempFile(track, trial)
+        
+        return nil unless file_path && File.exist?(file_path)
+        result = accuraterip.verifyImage(file_path)
+      else
+        # --- Track Mode ---
+        # Track mode verifies a hash of {track_number => file_path}.
+        if track.nil?
+          # Verify all ripped files (legacy behavior, called from ripImage/ripTracks after completion)
+          files_hash = @rippedFiles
+        else
+          # Verify single specific file (called from main method for early finish check)
+          path = @fileScheme.getTempFile(track, trial)
+          return nil unless path && File.exist?(path)
+          files_hash = {track => path}
+        end
+        
+        result = accuraterip.verifyTracks(files_hash)
+      end
+
+      # Output results to log (also displays on stdout via @log.add)
+      @log.accurateRipResult(result)
+      result
+    rescue StandardError => e
+      puts "An error occurred during AccurateRip verification: #{e.message}" if @prefs.debug
+      @log << "An error occurred during AccurateRip verification: #{e.message}\n"
+      nil
+    end
+  end
+
+  # Remove temporary files from other trials and rename the successful one to trial 1
+  def cleanupOtherTrialFiles(track, success_trial)
+    (1..@trial).each do |t|
+      next if t == success_trial
+      file = @fileScheme.getTempFile(track, t)
+      File.delete(file) if File.exist?(file)
+    end
+    
+    # Rename successful file to trial 1 location if needed
+    if success_trial != 1
+      success_file = @fileScheme.getTempFile(track, success_trial)
+      target_file = @fileScheme.getTempFile(track, 1)
+      FileUtils.mv(success_file, target_file)
+    end
   end
 end

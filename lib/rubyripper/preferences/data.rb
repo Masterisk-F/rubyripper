@@ -62,6 +62,14 @@ module Preferences
     # Throw away the log if no errors are found
     attr_accessor :noLog
 
+    # ACCURATE RIP PREFERENCES
+    # Enable AccurateRip verification
+    attr_accessor :accRip
+
+    # If true, perform AccurateRip verification after each trial
+    # and finish early when all tracks match.
+    attr_accessor :accRipEveryTime
+
     # TOC ANALYSIS PREFERENCES
     # Create a cuesheet
     attr_accessor :createCue
