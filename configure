@@ -171,7 +171,7 @@ end
 if $GTK3
   makefile.puts "\t#{$INSTALL} -m 755 bin/rubyripper_gtk3 $(prefix)$(DESTDIR)$(BINDIR)/rrr_gui"
   makefile.puts "\t#{$INSTALL} -m 644 #{$ICONDIR[1..-1]}/rubyripper.png $(prefix)$(DESTDIR)$(ICONDIR)/rubyripper.png"
-  makefile.puts "\t#{$INSTALL} -m 644 #{$DESKTOP[1..-1]}/rubyripper.desktop $(prefix)$(DESTDIR)$(DESKTOP)/rubyripper.desktop"
+  makefile.puts "\t#{$INSTALL} -m 644 #{$DESKTOP[1..-1]}/RubyRipperRemix.desktop $(prefix)$(DESTDIR)$(DESKTOP)/RubyRipperRemix.desktop"
 end
 
 if $CLI
@@ -189,7 +189,7 @@ makefile.puts "\trm -rf $(prefix)$(DESTDIR)$(RUBYDIR)"
 if $GTK3
   makefile.puts "\trm -f $(prefix)$(DESTDIR)$(BINDIR)/rrr_gui"
   makefile.puts "\trm -f $(prefix)$(DESTDIR)$(ICONDIR)/rubyripper.png"
-  makefile.puts "\trm -f $(prefix)$(DESTDIR)$(DESKTOP)/rubyripper.desktop"
+  makefile.puts "\trm -f $(prefix)$(DESTDIR)$(DESKTOP)/RubyRipperRemix.desktop"
   makefile.puts "\tgtk-update-icon-cache -t $(prefix)$(DESTDIR)$(ICONDIR)"
 end
 
