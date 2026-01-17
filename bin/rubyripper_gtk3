@@ -17,8 +17,24 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # Put the local lib directory on top of the ruby default lib search path
-$:.insert(0, File.expand_path('../../lib/rubyripperremix/lib', __FILE__))
-$:.insert(0, File.expand_path('../../lib', __FILE__))
+# Try to resolve isolated path relative to the script, or fallback to standard locations
+script_dir = File.dirname(File.expand_path(__FILE__))
+# Potential isolated lib paths:
+# 1. Development/Source: ../../lib/rubyripperremix/lib (doesn't exist in source, falls back to ../../lib)
+# 2. Installed (standard): ../lib/rubyripperremix/lib (relative to bin)
+# 3. Installed (nested bin): ../../lib/rubyripperremix/lib (if bin is in a subdir)
+possible_paths = [
+  File.expand_path('../lib/rubyripperremix/lib', script_dir),       # /usr/bin -> /usr/lib/rubyripperremix/lib
+  File.expand_path('../../lib/rubyripperremix/lib', script_dir),    # /usr/local/bin -> /usr/local/lib/rubyripperremix/lib
+  File.expand_path('../../lib', script_dir)                         # Source fallback
+]
+
+possible_paths.each do |path|
+  if File.directory?(path)
+    $:.insert(0, path)
+    break
+  end
+end
 
 # Try to find the rubyripper lib files
 begin
