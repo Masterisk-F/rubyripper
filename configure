@@ -171,8 +171,8 @@ end
 
 if $GTK3
   makefile.puts "\t#{$INSTALL} -m 755 bin/rubyripper_gtk3 $(prefix)$(DESTDIR)$(BINDIR)/rrr_gui"
-  makefile.puts "\t#{$INSTALL} -m 644 #{$ICONDIR[1..-1]}/rubyripper.png $(prefix)$(DESTDIR)#{$PREFIX}#{$ICONDIR}/rubyripper.png"
-  makefile.puts "\t#{$INSTALL} -m 644 #{$DESKTOP[1..-1]}/RubyRipperRemix.desktop $(prefix)$(DESTDIR)$(DESKTOP)/RubyRipperRemix.desktop"
+  makefile.puts "\t#{$INSTALL} -m 644 share/icons/hicolor/128x128/apps/rubyripper.png $(prefix)$(DESTDIR)#{$PREFIX}#{$ICONDIR}/rubyripper.png"
+  makefile.puts "\t#{$INSTALL} -m 644 share/applications/RubyRipperRemix.desktop $(prefix)$(DESTDIR)$(DESKTOP)/RubyRipperRemix.desktop"
 end
 
 if $CLI
