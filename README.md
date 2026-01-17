@@ -1,3 +1,23 @@
+# RubyRipperRemix (RRR)
+
+*A secure audiodisc ripper for Linux*
+
+This project is a fork of [Rubyripper](https://github.com/bleskodev/rubyripper).
+
+## Key Changes in this Fork
+
+*   Migration to libcdio-paranoia: Replaced `cdparanoia` with the more actively maintained `libcdio-paranoia` (cd-paranoia).
+*   [AccurateRip](https://accuraterip.com/) support for verifying ripped data.
+*   Bug Fixes & Improvements:
+    *   Removed legacy cdparanoia `-Z` workaround for better performance.
+    *   Added CATALOG number (UPC/EAN) support in cuesheets.
+    *   Fixed various issues with artist name handling (compilations, single album artist).
+    *   Other minor fixes and improvements.
+
+---
+
+*The content below is from the original Rubyripper documentation.*
+
 * [Historical note](#Historical-note)
 * [Introduction](#Introduction)
 * [Secure rip method](#Secure-rip-method)
