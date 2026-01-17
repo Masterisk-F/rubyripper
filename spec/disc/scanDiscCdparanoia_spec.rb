@@ -21,7 +21,7 @@ describe ScanDiscCdparanoia do
 
   def setQueryReply(reply, command=nil)
     allow(prefs).to receive('testdisc').and_return false
-    command ||= 'cdparanoia -d /dev/cdrom -vQ'
+    command ||= 'cd-paranoia -d /dev/cdrom -vQ'
     allow(exec).to receive(:launch).with(command).and_return reply
   end
 
@@ -61,7 +61,7 @@ describe ScanDiscCdparanoia do
       setQueryReply(nil)
       disc.scan()
       expect(disc.status).to eq('error')
-      expect(disc.error).to eq([:notInstalled, 'cdparanoia'])
+      expect(disc.error).to eq([:notInstalled, 'cd-paranoia'])
     end
     
     it "should abort when cdparanoia is unable to open the disc" do
@@ -73,10 +73,10 @@ describe ScanDiscCdparanoia do
 
     it "should have one retry without the drive parameter when cdparanoia doesn't recognize it"  do
       setQueryReply(["USAGE:"])
-      setQueryReply(["USAGE:"], 'cdparanoia -vQ')
+      setQueryReply(["USAGE:"], 'cd-paranoia -vQ')
       disc.scan()
       expect(disc.status).to eq('error')
-      expect(disc.error).to eq([:wrongParameters, 'cdparanoia'])
+      expect(disc.error).to eq([:wrongParameters, 'cd-paranoia'])
     end
 
     it "should abort when the disc drive is not found" do
@@ -87,7 +87,7 @@ describe ScanDiscCdparanoia do
     end
   end
 
-  context "When a disc is found" do
+  context "When a disc is found (legacy format)" do
     before(:each) do
       @cdparanoia ||= File.read('spec/disc/data/cdparanoia').split("\n")
       expect(perm).to receive(:problems?).once.and_return(false)
@@ -172,6 +172,53 @@ describe ScanDiscCdparanoia do
 
     it "should detect the total sectors of the disc" do
       setQueryReply(@cdparanoia)
+      disc.scan()
+      expect(disc.totalSectors).to eq(162919)
+    end
+  end
+
+  context "When a disc is found (libcdio format)" do
+    before(:each) do
+      @libcdio ||= File.read('spec/disc/data/cdparanoia_libcdio').split("\n")
+      expect(perm).to receive(:problems?).once.and_return(false)
+      expect(perm).to receive(:problemsSCSI?).once.and_return(false)
+      expect(prefs).to receive(:cdrom).at_least(:once).and_return('/dev/cdrom')
+    end
+
+    it "should set the status to ok" do
+      setQueryReply(@libcdio)
+      disc.scan()
+      expect(disc.status).to eq('ok')
+    end
+
+    it "should save the playtime" do
+      setQueryReply(@libcdio)
+      disc.scan()
+      expect(disc.playtime).to eq('36:12')
+    end
+
+    it "should save the amount of audiotracks" do
+      setQueryReply(@libcdio)
+      disc.scan()
+      expect(disc.audiotracks).to eq(10)
+    end
+
+    it "should return the startsector for a track" do
+      setQueryReply(@libcdio)
+      disc.scan()
+      expect(disc.getStartSector(1)).to eq(0)
+      expect(disc.getStartSector(10)).to eq(124080)
+    end
+
+    it "should return the amount of sectors for a track" do
+      setQueryReply(@libcdio)
+      disc.scan()
+      expect(disc.getLengthSector(1)).to eq(13209)
+      expect(disc.getLengthSector(10)).to eq(38839)
+    end
+
+    it "should detect the total sectors of the disc" do
+      setQueryReply(@libcdio)
       disc.scan()
       expect(disc.totalSectors).to eq(162919)
     end

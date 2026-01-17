@@ -262,7 +262,7 @@ class GtkPreferences
     @offset_button.tooltip_text = _("A website which lists the offset for most drives.\nYour drivename can be found in each logfile.")
 #pack objects
     @padMissingSamples = Gtk::CheckButton.new(_('Pad missing samples with zero\'s'))
-    @padMissingSamples.tooltip_text = _("Cdparanoia can\'t handle offsets \
+    @padMissingSamples.tooltip_text = _("Libcdio-paranoia (cd-paranoia) can\'t handle offsets \
 larger than 580 for \nfirst (negative offset) and last (positive offset) \
 track.\nThis option fills the rest with empty samples.\n\
 If disabled, the file will not have the correct size.\n\
@@ -327,7 +327,7 @@ It is recommended to enable this option.")
   def buildFrameRippingRelated
     @table60 = newTable(rows=2, columns=3)
 #create objects
-    @rip_label = Gtk::Label.new(_("Pass cdparanoia options:")) ; @rip_label.set_alignment(0.0, 0.5)
+    @rip_label = Gtk::Label.new(_("Pass cd-paranoia options:")) ; @rip_label.set_alignment(0.0, 0.5)
     @eject= Gtk::CheckButton.new(_('Eject cd when finished'))
     @noLog = Gtk::CheckButton.new(_('Only keep logfile if correction is needed'))
     @ripEntry= Gtk::Entry.new ; @ripEntry.width_request = 120
@@ -352,7 +352,7 @@ It is recommended to enable this option.")
     @markHiddenTrackLabel2 = Gtk::Label.new(_('second(s)'))
     @minLengthHiddenTrackSpin = Gtk::SpinButton.new(0, 30, 1)
     @minLengthHiddenTrackSpin.value = 2.0
-    @ripHiddenAudio.tooltip_text = _("Uncheck this if cdparanoia crashes with your ripping drive.")
+    @ripHiddenAudio.tooltip_text = _("Uncheck this if cd-paranoia crashes with your ripping drive.")
     text = _("A hidden track will rip to a seperate file if used in track modus.\nIf it's smaller the sectors will be prepended to the first track.")
     @minLengthHiddenTrackSpin.tooltip_text = text
     @markHiddenTrackLabel1.tooltip_text = text

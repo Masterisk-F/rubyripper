@@ -140,7 +140,7 @@ private
     @out.puts "    **" + _("Find your offset at http://www.accuraterip.com/driveoffsets.htm.")
     @out.puts "    **" + _("Your drive model is shown in the logfile.")
     @out.puts ' 3) ' + _("Pad missing lead-in/lead-out samples with zeroes %s") % [showBool(@prefs.padMissingSamples)]
-    @out.puts ' 4) ' + _("Passing extra cdparanoia parameters") + ": %s" % [@prefs.rippersettings]
+    @out.puts ' 4) ' + _("Passing extra cd-paranoia parameters") + ": %s" % [@prefs.rippersettings]
     @out.puts ' 5) ' + _("Match all chunks") + ": %s" % [@prefs.reqMatchesAll]
     @out.puts ' 6) ' + _("Match erroneous chunks") + ": %s" % [@prefs.reqMatchesErrors]
     @out.puts ' 7) ' + _("Maximum trials") + ": %s" % [@prefs.maxTries == 0 ? "no\
@@ -163,7 +163,7 @@ private
       when 2 then @prefs.offset = @int.get(_("Drive offset"), 0)
       when 3 then switchBool('padMissingSamples')
       when 4 then @prefs.rippersettings = \
-        @string.get(_("Passing extra cdparanoia parameters"), "")
+        @string.get(_("Passing extra cd-paranoia parameters"), "")
       when 5 then @prefs.reqMatchesAll = @int.get(_("Match all chunks"), 2)
       when 6 then @prefs.reqMatchesErrors = @int.get(_("Match erronous chunks"), 3)
       when 7 then @prefs.maxTries = @int.get(_("Maximum trials"), 5)

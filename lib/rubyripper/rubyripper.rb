@@ -161,7 +161,7 @@ class Rubyripper
     @encoding = nil
     @ripping.cancelled = true if @ripping != nil
     @ripping = nil
-    `killall cdparanoia` # kill any rip that is already started
+    `killall cd-paranoia` # kill any rip that is already started
   end
 
   def summary
