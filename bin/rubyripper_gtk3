@@ -20,9 +20,9 @@
 # Try to resolve isolated path relative to the script, or fallback to standard locations
 script_dir = File.dirname(File.expand_path(__FILE__))
 # Potential isolated lib paths:
-# 1. Development/Source: ../../lib/rubyripperremix/lib (doesn't exist in source, falls back to ../../lib)
-# 2. Installed (standard): ../lib/rubyripperremix/lib (relative to bin)
-# 3. Installed (nested bin): ../../lib/rubyripperremix/lib (if bin is in a subdir)
+# 1. Installed (/usr/bin -> /usr/lib/...): ../lib/rubyripperremix/lib
+# 2. Installed (/usr/local/bin -> /usr/local/lib/...): ../../lib/rubyripperremix/lib
+# 3. Source fallback: ../../lib
 possible_paths = [
   File.expand_path('../lib/rubyripperremix/lib', script_dir),       # /usr/bin -> /usr/lib/rubyripperremix/lib
   File.expand_path('../../lib/rubyripperremix/lib', script_dir),    # /usr/local/bin -> /usr/local/lib/rubyripperremix/lib
