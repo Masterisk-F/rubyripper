@@ -38,7 +38,8 @@ attr_reader :status
 
   # return output for command
   # clear the file if it exists before the program runs
-  def launch(command, filename=false, noTranslations=nil)
+  # stopPatterns: stop when matches this patterns (add this feature because cd-paranoia doesn't exit when disk is not inserted)
+  def launch(command, filename=false, noTranslations=nil, stopPatterns=nil)
     return true if command.empty?
     program = command.split[0]
     command = "LC_ALL=C; #{command}" if noTranslations
@@ -50,7 +51,14 @@ attr_reader :status
         output = Array.new
         PTY.spawn(command) do |stdin, stdout, pid|
           begin
-            stdin.each { |line| output << line }
+            stdin.each do |line|
+              output << line
+                if stopPatterns && stopPatterns.any? { |pattern| line =~ pattern }
+                puts "DEBUG: Stop pattern matched, terminating #{command}" if @prefs.debug
+                Process.kill('TERM', pid) rescue nil
+                break
+              end
+            end
           rescue Errno::EIO
             # normal end of input stream
           rescue Exception => exception

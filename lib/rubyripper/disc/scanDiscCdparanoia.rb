@@ -138,16 +138,23 @@ class ScanDiscCdparanoia
     parseQueryResult()
   end
 
+  # cd-paranoia puts this message, stop the process
+  STOP_PATTERNS = [
+    /No medium found/,           # libcdio-paranoia
+    /Unable to open disc/,       # original cdparanoia
+    /No such file or directory/, # no device
+  ]
+
   def getQueryResult
     if @prefs.testdisc
       @query = File.read(File.join(@prefs.testdisc, 'cdparanoia')).split("\n")
     else
       @multipleDriveSupport = true
-      @query = @exec.launch("cd-paranoia -d #{@prefs.cdrom} -vQ")
+      @query = @exec.launch("cd-paranoia -d #{@prefs.cdrom} -vQ", false, nil, STOP_PATTERNS)
       # some versions of cdparanoia don't support the cdrom parameter
       
       if @query != nil && @query.include?('USAGE')
-        @query = @exec.launch("cd-paranoia -vQ")
+        @query = @exec.launch("cd-paranoia -vQ", false, nil, STOP_PATTERNS)
         @multipleDriveSupport = false
       end
     end
@@ -170,7 +177,10 @@ class ScanDiscCdparanoia
     
     @query.each do |line|
       case line
+        # original cdparanoia
         when /Unable to open disc/ then updateStatus([:noDiscInDrive, @prefs.cdrom]) ; break
+        # libcdio-paranoia (cd-paranoia)
+        when /No medium found/ then updateStatus([:noDiscInDrive, @prefs.cdrom]) ; break
         when /USAGE/ then updateStatus([:wrongParameters, 'cd-paranoia']) ; break
         when /No such file or directory/ then updateStatus([:unknownDrive, @prefs.cdrom]) ; break
       end
