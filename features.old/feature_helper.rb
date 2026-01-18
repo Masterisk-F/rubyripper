@@ -21,7 +21,7 @@ def _(txt)
 end
 
 $rr_version = 'test'
-$rr_url = 'https://github.com/bleskodev/rubyripper'
+$rr_url = 'https://github.com/Masterisk-F/RubyRipperRemix'
 $test = true
 
 require 'rubyripper/cli/cliGetAnswer'

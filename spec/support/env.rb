@@ -16,7 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 $rr_version = 'test'
-$rr_url = 'https://github.com/bleskodev/rubyripper'
+$rr_url = 'https://github.com/Masterisk-F/RubyRipperRemix'
 $run_specs = true
 
 # define a lightweight alternative for translations

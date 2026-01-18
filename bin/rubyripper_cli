@@ -96,7 +96,7 @@ private
 
   # check dependencies, read the preferences and show the disc
   def prepare
-    @out.puts _("Rubyripper version %s") % [$rr_version]
+    @out.puts _("RubyripperRemix version %s") % [$rr_version]
     @out.puts ""
     @cliPrefs.read()
     @cliDisc.show()

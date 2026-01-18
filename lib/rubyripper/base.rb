@@ -16,8 +16,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # The current version of Rubyripper
-$rr_version = '0.8.0rc4'
-$rr_url = 'https://github.com/bleskodev/rubyripper'
+$rr_version = '0.8.0rc4_0.1.0'
+$rr_url = 'https://github.com/Masterisk-F/RubyRipperRemix'
 
 # Crash on errors, because bugs are otherwise hard to find
 Thread.abort_on_exception = true
