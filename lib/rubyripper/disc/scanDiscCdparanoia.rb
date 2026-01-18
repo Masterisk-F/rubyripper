@@ -215,7 +215,7 @@ class ScanDiscCdparanoia
 
   # add some extra variables
   def addExtraInfo
-    @status = _('ERROR: No audio tracks found!') if @audioTracks == 0
+    @status = _('ERROR: No audio tracks found!') if @audiotracks == 0
 
     @totalSectors = 0
     @lengthSector.each_value{|value| @totalSectors += value}
