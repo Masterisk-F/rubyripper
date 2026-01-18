@@ -7,7 +7,7 @@ This project is a fork of [Rubyripper](https://github.com/bleskodev/rubyripper).
 ## Key Changes in this Fork
 
 *   Migration to libcdio-paranoia: Replaced `cdparanoia` with the more actively maintained `libcdio-paranoia` (cd-paranoia).
-*   [AccurateRip](https://accuraterip.com/) support for verifying ripped data.
+*   [AccurateRip](https://accuraterip.com/) support for verifying ripped data.[(detail)](https://github.com/Masterisk-F/RubyRipperRemix/pull/5)
 *   Bug Fixes & Improvements:
     *   Removed legacy cdparanoia `-Z` workaround for better performance.
     *   Added CATALOG number (UPC/EAN) support in cuesheets.
