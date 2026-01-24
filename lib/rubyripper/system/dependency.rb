@@ -123,7 +123,8 @@ calculation unless %s is installed.") % ['Discid'],
       'normalize' => _("You won't be able to normalize audio files."),
       'cdrdao' => _("You won't be able to make cuesheets"),
       'cd-info' => _("Cd-info helps to detect data tracks."),
-      'ls' => _("Show rights in case of problems")
+      'ls' => _("Show rights in case of problems"),
+      'ctdb-cli' => _("You won't be able to perform CTDB verification.")
     }
   end
 
@@ -165,6 +166,7 @@ calculation unless %s is installed.") % ['Discid'],
     @optionalDeps << ['cd-info', installed?('cd-info')]
     @optionalDeps << ['ls', installed?('ls')]
     @optionalDeps << ['diskutil', installed?('diskutil')]
+    @optionalDeps << ['ctdb-cli', installed?('ctdb-cli')]
   end
 
   # check for ruby-gtk3

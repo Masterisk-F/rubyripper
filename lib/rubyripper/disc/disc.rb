@@ -23,7 +23,7 @@ require 'rubyripper/preferences/main'
 
 # A helper class to hide lower level details
 class Disc
-attr_reader :metadata
+attr_reader :metadata, :cdrdao
 
   def initialize(cdpar=nil, freedb=nil, musicbrainz=nil, deps=nil, prefs=nil)
     @cdparanoia = cdpar ? cdpar : ScanDiscCdparanoia.new()

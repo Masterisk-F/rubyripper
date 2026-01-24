@@ -100,7 +100,8 @@ class GtkPreferences
     @errChunksSpin.value = @prefs.reqMatchesErrors.to_f
     @maxSpin.value = @prefs.maxTries.to_f
     @accRip.active = @prefs.accRip
-    @accRipEveryTime.active = @prefs.accRipEveryTime
+    @ctdb.active = @prefs.ctdb
+    @verifyEverytime.active = @prefs.verifyEverytime
     @ripEntry.text = @prefs.rippersettings
     @eject.active = @prefs.eject
     @noLog.active = @prefs.noLog
@@ -169,7 +170,8 @@ class GtkPreferences
     @prefs.reqMatchesErrors = @errChunksSpin.value.to_i
     @prefs.maxTries = @maxSpin.value.to_i
     @prefs.accRip = @accRip.active?
-    @prefs.accRipEveryTime = @accRipEveryTime.active?
+    @prefs.ctdb = @ctdb.active?
+    @prefs.verifyEverytime = @verifyEverytime.active?
     @prefs.rippersettings = @ripEntry.text
     @prefs.eject = @eject.active?
     @prefs.noLog = @noLog.active?
@@ -292,13 +294,16 @@ It is recommended to enable this option.")
 
   # 2nd frame on secure ripping tab
   def buildFrameRippingOptions
-    @table50 = newTable(rows=5, columns=3)
+    @table50 = newTable(rows=6, columns=3)
 #create objects
     @all_chunks = Gtk::Label.new(_("Match all chunks:")) ; @all_chunks.set_alignment(0.0, 0.5)
     @err_chunks = Gtk::Label.new(_("Match erroneous chunks:")) ; @err_chunks.set_alignment(0.0, 0.5)
     @max_label = Gtk::Label.new(_("Maximum trials (0 = unlimited):")) ; @max_label.set_alignment(0.0, 0.5)
     @accRip = Gtk::CheckButton.new(_("AccurateRip verification"))
-    @accRipEveryTime = Gtk::CheckButton.new(_("AccurateRip every trial (finish early on match)"))
+    @ctdb = Gtk::CheckButton.new(_("CTDB verification (image rip only)"))
+    @ctdb.tooltip_text = _("CUETools Database verification. Requires ctdb-cli to be installed.")
+    @ctdb.sensitive = @deps.installed?('ctdb-cli')
+    @verifyEverytime = Gtk::CheckButton.new(_("Verify every trial (finish early on match)"))
     @allChunksSpin = Gtk::SpinButton.new(2.0,  100.0, 1.0)
     @errChunksSpin = Gtk::SpinButton.new(2.0, 100.0, 1.0)
     @maxSpin = Gtk::SpinButton.new(0.0, 100.0, 1.0)
@@ -310,7 +315,8 @@ It is recommended to enable this option.")
     @table50.attach(@err_chunks, 0, 1, 1, 2, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
     @table50.attach(@max_label, 0, 1, 2, 3, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
     @table50.attach(@accRip, 0, 3, 3, 4, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
-    @table50.attach(@accRipEveryTime, 0, 3, 4, 5, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
+    @table50.attach(@ctdb, 0, 3, 4, 5, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
+    @table50.attach(@verifyEverytime, 0, 3, 5, 6, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
     
     @table50.attach(@allChunksSpin, 1, 2, 0, 1, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0) #2nd column
     @table50.attach(@errChunksSpin, 1, 2, 1, 2, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
@@ -320,8 +326,15 @@ It is recommended to enable this option.")
     @table50.attach(@time3, 2, 3, 2, 3, Gtk::AttachOptions::FILL, Gtk::AttachOptions::SHRINK, 0, 0)
 #connect a signal to @all_chunks to make sure @err_chunks get always at least the same amount of rips as @all_chunks
     @allChunksSpin.signal_connect("value_changed") {if @errChunksSpin.value < @allChunksSpin.value ; @errChunksSpin.value = @allChunksSpin.value end ; @errChunksSpin.set_range(@allChunksSpin.value,100.0)} #ensure all_chunks cannot be smaller that err_chunks.
-    @accRip.signal_connect("clicked") {@accRipEveryTime.sensitive = @accRip.active?}
+    updateVerifyEverytimeSensitivity()
+    @accRip.signal_connect("clicked") { updateVerifyEverytimeSensitivity() }
+    @ctdb.signal_connect("clicked") { updateVerifyEverytimeSensitivity() }
     @frame50= newFrame(_('Ripping options'), child=@table50)
+  end
+
+  # Update sensitivity of verifyEverytime based on accRip or ctdb being active
+  def updateVerifyEverytimeSensitivity
+    @verifyEverytime.sensitive = @accRip.active? || (@ctdb.active? && @deps.installed?('ctdb-cli'))
   end
 
   def buildFrameRippingRelated

@@ -23,6 +23,8 @@ require 'rubyripper/system/execute'
 require 'rubyripper/preferences/main'
 require 'rubyripper/modules/audioCalculations'
 require 'rubyripper/accurateRip'
+require 'rubyripper/ctdb'
+require 'open3'
 
 # The SecureRip class is mainly responsible for:
 # * Managing cdparanoia to fetch the files
@@ -66,10 +68,9 @@ class SecureRip
     puts "DEBUG: Ripping image" if @prefs.debug
     ripTrack()
  
-    # performAccurateRipVerification() unless @cancelled || @rippedFiles.empty?
-    # Only perform AccurateRip verification once at the end when accRipEveryTime=false
-    if @prefs.accRip && !@prefs.accRipEveryTime && !@cancelled && !@rippedFiles.empty?
-      performAccurateRipVerification()
+    # Perform verification once at the end when verifyEverytime=false
+    if (@prefs.accRip || @prefs.ctdb) && !@prefs.verifyEverytime && !@cancelled && !@rippedFiles.empty?
+      performVerification()
     end
     
     startEncodingForTracks()
@@ -82,10 +83,9 @@ class SecureRip
       ripTrack(track)
     end
     
-    # performAccurateRipVerification() unless @cancelled || @rippedFiles.empty?
-    # Only perform AccurateRip verification once at the end when accRipEveryTime=false
-    if @prefs.accRip && !@prefs.accRipEveryTime && !@cancelled && !@rippedFiles.empty?
-      performAccurateRipVerification()
+    # Perform verification once at the end when verifyEverytime=false
+    if (@prefs.accRip || @prefs.ctdb) && !@prefs.verifyEverytime && !@cancelled && !@rippedFiles.empty?
+      performVerification()
     end
     
     startEncodingForTracks()
@@ -155,10 +155,10 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
     @reqMatchesAll.times do
       if not doNewTrial(track) ; return false end
       
-      # If accRipEveryTime is true, perform AccurateRip verification after each trial
-      if @prefs.accRip && @prefs.accRipEveryTime
-        ar_result = performAccurateRipVerification(track, @trial)
-        if ar_result && ar_result.status
+      # If verifyEverytime is true, perform verification after each trial
+      if (@prefs.accRip || @prefs.ctdb) && @prefs.verifyEverytime
+        verification_result = performVerification(track, @trial)
+        if verification_result
           # Success: keep this trial's file and finish early
           cleanupOtherTrialFiles(track, @trial)
           @crcs = [getCRC(track, 1)] # Recalculate CRC (for renamed file)
@@ -196,10 +196,10 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
       correctErrorPos(track) if @trial > @reqMatchesErrors
       @correctedcrc = getCRC(track, 1)
 
-      # If accRipEveryTime is true, perform AccurateRip verification after error correction
-      if @prefs.accRip && @prefs.accRipEveryTime
-        ar_result = performAccurateRipVerification(track, 1)
-        if ar_result && ar_result.status
+      # If verifyEverytime is true, perform verification after error correction
+      if @prefs.verifyEverytime
+        verification_result = performVerification(track, 1)
+        if verification_result
           @errors.clear
           break
         end
@@ -470,7 +470,7 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
     return @crc32
   end
 
-  # Execute AccurateRip verification
+  # Execute integrated verification (AccurateRip and/or CTDB)
   #
   # This method handles two main scenarios based on the arguments:
   # 1. Verify all tracks
@@ -482,9 +482,44 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
   #    - Target: Uses specific temporary file for the given track and trial.
   #
   # In both scenarios, the behavior differs based on @prefs.image:
-  # - Image Mode (@prefs.image=true): Verifies a single image file using verifyImage(path).
-  # - Track Mode (@prefs.image=false): Verifies one or more tracks using verifyTracks(hash).
+  # - Image Mode (@prefs.image=true): Verifies a single image file.
+  # - Track Mode (@prefs.image=false): Verifies one or more tracks.
   #
+  # Returns true if verification succeeds (for early finish), false otherwise.
+  #
+  def performVerification(track=nil, trial=1)
+    puts "DEBUG: Starting verification" if @prefs.debug
+
+    ar_result = nil
+    ctdb_result = nil
+
+    begin
+      # Get file path for verification
+      file_path = @fileScheme.getTempFile(track, trial)
+      return false unless file_path && File.exist?(file_path)
+
+      # AccurateRip verification
+      if @prefs.accRip
+        puts "DEBUG: Running AccurateRip verification" if @prefs.debug
+        ar_result = performAccurateRipVerification(track, trial)
+      end
+
+      # CTDB verification (image mode only)
+      if @prefs.ctdb && @prefs.image && @deps.installed?('ctdb-cli')
+        puts "DEBUG: Running CTDB verification" if @prefs.debug
+        ctdb_result = performCtdbVerification(file_path)
+      end
+
+      # Determine overall verification status
+      determineVerificationStatus(ar_result, ctdb_result)
+    rescue StandardError => e
+      puts "An error occurred during verification: #{e.message}" if @prefs.debug
+      @log << "An error occurred during verification: #{e.message}\n"
+      false
+    end
+  end
+
+  # Execute AccurateRip verification
   def performAccurateRipVerification(track=nil, trial=1)
     puts "DEBUG: Starting AccurateRip verification" if @prefs.debug
 
@@ -523,6 +558,52 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
       puts "An error occurred during AccurateRip verification: #{e.message}" if @prefs.debug
       @log << "An error occurred during AccurateRip verification: #{e.message}\n"
       nil
+    end
+  end
+
+  # Execute CTDB verification (image mode only)
+  def performCtdbVerification(file_path)
+    puts "DEBUG: Starting CTDB verification" if @prefs.debug
+
+    begin
+      ctdb = Ctdb.new(@disc, @disc.cdrdao, @fileScheme, @prefs, @deps, @exec)
+      result = ctdb.verifyImage(file_path)
+
+      @log.ctdbResult(result) if result
+      result
+    rescue StandardError => e
+      puts "An error occurred during CTDB verification: #{e.message}" if @prefs.debug
+      @log << "An error occurred during CTDB verification: #{e.message}\n"
+      nil
+    end
+  end
+
+  # Determine overall verification status based on AccurateRip and CTDB results
+  #
+  # Logic:
+  # - Both enabled and both have data: both must match for success, mismatch in either = failure
+  # - One has data, other doesn't: use the one with data
+  # - Neither has data: return false (not found, not a match)
+  #
+  def determineVerificationStatus(ar_result, ctdb_result)
+    ar_found = ar_result && ar_result.respond_to?(:pressings) && !ar_result.pressings.empty?
+    ctdb_found = ctdb_result && ctdb_result.respond_to?(:entryFound?) && ctdb_result.entryFound?
+
+    ar_success = ar_result && ar_result.status
+    ctdb_success = ctdb_result && ctdb_result.status == 'found'
+
+    if ar_found && ctdb_found
+      # Both have data: both must succeed
+      ar_success && ctdb_success
+    elsif ar_found
+      # Only AccurateRip has data
+      ar_success
+    elsif ctdb_found
+      # Only CTDB has data
+      ctdb_success
+    else
+      # Neither found data
+      false
     end
   end
 

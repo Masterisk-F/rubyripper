@@ -48,10 +48,13 @@ class Cuesheet
   end
 
   # return an array with the cuesheet for a codec
-  def save(codec)
+  # single_file_path: optional path to use instead of FileScheme (for temp CUE generation)
+  def save(codec, single_file_path = nil)
     @cuesheet = Array.new
+    @single_file_path = single_file_path
     printDiscData
     @prefs.image ? printTrackDataImage(codec) : printTrackData(codec)
+    @single_file_path = nil
     @cuesheet
   end
 
@@ -96,7 +99,9 @@ private
 
    #writes the location of the file in the Cue
   def printFileLine(codec, track=nil)
-    @cuesheet << "FILE \"#{File.basename(@fileScheme.getFile(codec, track))}\" #{getCueFileType(codec)}"
+    # Use single_file_path if set (for temp CUE generation), otherwise use FileScheme
+    file_path = @single_file_path || @fileScheme.getFile(codec, track)
+    @cuesheet << "FILE \"#{File.basename(file_path)}\" #{getCueFileType(codec)}"
   end
   
   def printTrackLine(track)

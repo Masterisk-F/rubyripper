@@ -46,7 +46,8 @@ module Preferences
       @data.eject = true
       @data.noLog = false
       @data.accRip = false
-      @data.accRipEveryTime = false
+      @data.ctdb = false
+      @data.verifyEverytime = false
     end
 
     def setTocAnalysisDefaults
