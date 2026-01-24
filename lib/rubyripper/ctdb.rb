@@ -85,7 +85,7 @@ class CtdbResult
       return lines.join("\n")
     end
 
-    lines << "  #{@status ? 'Verification successful' : 'Verification failed'}"
+    lines << "  Status: #{@status ? 'Verification successful' : 'Verification failed'}"
     lines << "  Confidence: #{@confidence}/#{@total_entries}"
     lines << "  Message: #{@message}" if @message && !@message.empty?
 
