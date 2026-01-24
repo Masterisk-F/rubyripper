@@ -73,6 +73,10 @@ class SecureRip
       performVerification()
     end
     
+    if @prefs.ctdb && !@cancelled && !@rippedFiles.empty?
+      performCtdbSubmission()
+    end
+
     startEncodingForTracks()
   end
     
@@ -620,6 +624,28 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
       success_file = @fileScheme.getTempFile(track, success_trial)
       target_file = @fileScheme.getTempFile(track, 1)
       FileUtils.mv(success_file, target_file)
+    end
+  end
+
+  # Execute CTDB submission (image mode only)
+  def performCtdbSubmission
+    file_path = @rippedFiles[nil] # image rip only has one file
+    return unless file_path && File.exist?(file_path)
+
+    puts "DEBUG: Starting CTDB submission" if @prefs.debug
+
+    begin
+      ctdb = Ctdb.new(@disc, @disc.cdrdao, @fileScheme, @prefs, @deps, @exec)
+      success = ctdb.submit(file_path)
+
+      if success
+        @log << "CTDB: Submission successful\n"
+      else
+        @log << "CTDB: Submission failed or skipped (e.g. check debug log)\n"
+      end
+    rescue StandardError => e
+      puts "An error occurred during CTDB submission: #{e.message}" if @prefs.debug
+      @log << "An error occurred during CTDB submission: #{e.message}\n"
     end
   end
 end

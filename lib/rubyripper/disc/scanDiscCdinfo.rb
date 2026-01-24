@@ -28,7 +28,8 @@ class ScanDiscCdinfo
   include AudioCalculations
 
   attr_reader :status, :version, :discMode, :deviceName, :totalSectors,
-      :playtime, :audiotracks, :firstAudioTrack, :dataTracks
+      :playtime, :audiotracks, :firstAudioTrack, :dataTracks,
+      :vendor, :model
   
   # Cd-info starts all tracks with 2 seconds extra if compared with cdparanoia
   OFFSET_CDINFO = -150

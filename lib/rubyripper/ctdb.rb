@@ -145,6 +145,78 @@ class Ctdb
     result
   end
 
+  # Submit parity information to CTDB
+  # file_path: path to the WAV image file
+  # return true if submission was successful, false otherwise
+  def submit(file_path)
+    # Check if ctdb-cli is installed
+    unless @deps.installed?('ctdb-cli')
+      puts "CTDB: ctdb-cli not installed" if @prefs.debug
+      return false
+    end
+
+    return false unless File.exist?(file_path)
+
+    # Generate temporary CUE sheet pointing to the image file
+    temp_cue = generateTempCue(file_path)
+    return false unless temp_cue
+
+    begin
+      # Prepare drive name
+      drive_name = ""
+      scanner = @disc.advancedTocScanner
+      if scanner.respond_to?(:vendor) && scanner.vendor && scanner.model
+        drive_name = "#{scanner.vendor} - #{scanner.model}"
+      end
+
+      # Construct command
+      command = "ctdb-cli --xml submit #{Shellwords.escape(temp_cue.path)}"
+      command << " --drive #{Shellwords.escape(drive_name)} --quality 100"
+      # Set environment variable and execute
+      # Actual submission is enabled only if CTDB_CLI_CALLER is set.
+      # If in debug mode, we omit it to trigger ctdb-cli's dry-run mode.
+      env = {}
+      unless @prefs.debug
+        env['CTDB_CLI_CALLER'] = "RubyRipperRemix v.#{$rr_version}"
+      end
+
+      stdout_str, stderr_str, status = Open3.capture3(env, command)
+
+      if @prefs.debug
+        puts "CTDB submit command: #{command}"
+        puts "CTDB submit env: #{env.inspect}"
+        puts "CTDB submit stdout: #{stdout_str}"
+        puts "CTDB submit stderr: #{stderr_str}"
+      end
+
+      return false unless status.success?
+      return false if stdout_str.nil? || stdout_str.empty?
+
+      begin
+        doc = REXML::Document.new(stdout_str)
+        submit_element = doc.elements['ctdb/submit_result']
+        return false unless submit_element
+
+        res_status = submit_element.attributes['status']
+        if @prefs.debug
+          res_status == 'submitted' || res_status == 'dry_run'
+        else
+          res_status == 'submitted'
+        end
+      rescue REXML::ParseException => e
+        puts "CTDB: XML parse error during submit: #{e.message}" if @prefs.debug
+        false
+      end
+    rescue StandardError => e
+      puts "CTDB: Error during submit: #{e.message}" if @prefs.debug
+      false
+    ensure
+      # Clean up temporary CUE file
+      temp_cue.close
+      temp_cue.unlink
+    end
+  end
+
   private
 
   # Generate a temporary CUE sheet pointing to the specified WAV file
