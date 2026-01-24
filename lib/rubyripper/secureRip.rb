@@ -590,7 +590,7 @@ is #{@disc.getFileSize(track)} bytes." if @prefs.debug
     ctdb_found = ctdb_result && ctdb_result.respond_to?(:entryFound?) && ctdb_result.entryFound?
 
     ar_success = ar_result && ar_result.status
-    ctdb_success = ctdb_result && ctdb_result.status == 'found'
+    ctdb_success = ctdb_result && ctdb_result.status
 
     if ar_found && ctdb_found
       # Both have data: both must succeed

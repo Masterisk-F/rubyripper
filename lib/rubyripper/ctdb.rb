@@ -24,14 +24,16 @@ require 'shellwords'
 
 # Class to hold the verification results of CTDB
 class CtdbResult
-  attr_reader :status,         # status string from ctdb-cli (e.g., 'found', 'not_found', 'failure')
-              :confidence,     # confidence value from database
+  attr_reader :status,         # boolean: verified OK or not
+              :confidence,     # overall confidence value from database
+              :total_entries,  # total number of entries found in database
               :message,        # additional message from ctdb-cli
               :entries         # array of database entries
 
   def initialize
-    @status = nil
+    @status = false
     @confidence = 0
+    @total_entries = 0
     @message = nil
     @entries = []
   end
@@ -45,9 +47,13 @@ class CtdbResult
       verify_element = doc.elements['ctdb/verify_result']
       return unless verify_element
 
-      @status = verify_element.attributes['status']
       @message = verify_element.attributes['message']
       @confidence = verify_element.attributes['confidence'].to_i
+      @total_entries = verify_element.attributes['total_entries'].to_i
+
+      # Determine status based on confidence and total_entries
+      # verified OK if (confidence >= 2) OR (confidence == 1 AND total_entries == 1)
+      @status = (@confidence >= 2) || (@confidence == 1 && @total_entries == 1)
 
       # Parse entries
       verify_element.elements.each('entry') do |entry|
@@ -60,13 +66,13 @@ class CtdbResult
       end
     rescue REXML::ParseException => e
       @message = "XML parse error: #{e.message}"
-      @status = 'failure'
+      @status = false
     end
   end
 
   # Check if database entry was found (regardless of match result)
   def entryFound?
-    !@entries.empty? || @status == 'found'
+    @total_entries > 0 || !@entries.empty?
   end
 
   # Generate string for logging
@@ -74,13 +80,13 @@ class CtdbResult
     lines = []
     lines << "CTDB verification results:"
 
-    if @status == 'not_found' || @entries.empty?
+    if !entryFound?
       lines << "  No entry found in the database"
       return lines.join("\n")
     end
 
-    lines << "  Status: #{@status}"
-    lines << "  Confidence: #{@confidence}" if @confidence > 0
+    lines << "  #{@status ? 'Verification successful' : 'Verification failed'}"
+    lines << "  Confidence: #{@confidence}/#{@total_entries}"
     lines << "  Message: #{@message}" if @message && !@message.empty?
 
     unless @entries.empty?
@@ -92,7 +98,6 @@ class CtdbResult
     end
 
     lines << ""
-    lines << "  #{@status == 'found' ? 'Verification successful' : 'Verification failed'}"
 
     lines.join("\n")
   end
