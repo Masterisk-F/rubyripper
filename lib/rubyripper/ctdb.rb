@@ -199,9 +199,9 @@ class Ctdb
 
         res_status = submit_element.attributes['status']
         if @prefs.debug
-          res_status == 'submitted' || res_status == 'dry_run'
+          res_status == 'dry_run'
         else
-          res_status == 'submitted'
+          res_status == 'submitted' && submit_element.elements['response'].attributes['status'] == 'success'
         end
       rescue REXML::ParseException => e
         puts "CTDB: XML parse error during submit: #{e.message}" if @prefs.debug
