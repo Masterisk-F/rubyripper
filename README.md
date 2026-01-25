@@ -1,6 +1,6 @@
 # RubyRipperRemix (RRR)
 
-*A secure audiodisc ripper for Linux with Verification using AccurateRip and CTDB*
+*A secure audiodisc ripper for Linux with AccurateRip and CTDB verification*
 
 This project is a fork of [Rubyripper](https://github.com/bleskodev/rubyripper).
 
