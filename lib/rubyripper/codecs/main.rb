@@ -158,7 +158,7 @@ module Codecs
           when :discId then add(value, wrapDiscIdValueForTags(@disc.freedbDiscid)) if @disc.freedbDiscid
           when :musicBrainzDiscId then add(value, wrapDiscIdValueForTags(@disc.musicbrainzDiscid)) if @disc.musicbrainzDiscid
           when :discNumber then add(value, "#{@md.discNumber}") if @md.discNumber
-          when :encoder then add(value, "\"Rubyripper #{$rr_version}\"")
+          when :encoder then add(value, "\"RubyRipperRemix #{$rr_version}\"")
           when :cuesheet then addCuesheet(value) if @prefs.image
           when :trackname then add(value, @tags.trackname(track)) unless @prefs.image
           when :tracknumber then add(value, "#{track}") unless @prefs.image
