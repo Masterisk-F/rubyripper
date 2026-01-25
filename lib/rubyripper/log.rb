@@ -202,6 +202,15 @@ class Log
     add("\n")
   end
 
+  # Output CTDB verification results to log
+  def ctdbResult(result)
+    add("\n")
+    add("=" * 60 + "\n")
+    add(result.toStr + "\n")
+    add("=" * 60 + "\n")
+    add("\n")
+  end
+
 
   def summary() #Give an overview of errors
     if @encodingErrors ; @short_summary += _("\nWARNING: ENCODING ERRORS WERE DETECTED\n") ; end

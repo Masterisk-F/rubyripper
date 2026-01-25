@@ -66,9 +66,13 @@ module Preferences
     # Enable AccurateRip verification
     attr_accessor :accRip
 
-    # If true, perform AccurateRip verification after each trial
+    # CTDB PREFERENCES
+    # Enable CTDB verification (image rip only)
+    attr_accessor :ctdb
+
+    # If true, perform verification after each trial
     # and finish early when all tracks match.
-    attr_accessor :accRipEveryTime
+    attr_accessor :verifyEverytime
 
     # TOC ANALYSIS PREFERENCES
     # Create a cuesheet
